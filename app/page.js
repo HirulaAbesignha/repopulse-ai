@@ -427,6 +427,22 @@ export default function Home() {
             </a>
           </div>
         )}
+        <footer className="mt-12 border-t border-gray-800 pt-6 text-sm text-gray-500 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <p>
+            RepoPulse AI helps developers improve GitHub repository presentation,
+            README quality, and project structure.
+          </p>
+
+          <p>
+            Support:{" "}
+            <a
+              href="mailto:hirulapinibinda01@gmail.com"
+              className="text-blue-400 hover:underline"
+            >
+              hirulapinibinda01@gmail.com
+            </a>
+          </p>
+</footer>
       </section>
     </main>
   );
