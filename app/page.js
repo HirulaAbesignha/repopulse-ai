@@ -12,8 +12,10 @@ export default function Home() {
   const [repos, setRepos] = useState([]);
   const [reposLoading, setReposLoading] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
+    loadProfileQuietly();
     loadReposQuietly();
   }, []);
 
@@ -40,7 +42,20 @@ export default function Home() {
       setSignedIn(false);
     }
   }
+  async function loadProfileQuietly() {
+    try {
+      const res = await fetch("/api/user/profile");
+      const data = await safeJsonResponse(res);
 
+      if (res.ok) {
+        setProfile(data.user);
+        setSignedIn(true);
+      }
+    } catch {
+      setProfile(null);
+    }
+  }
+  
   async function loadRepos() {
     setReposLoading(true);
     setError("");
@@ -137,6 +152,24 @@ export default function Home() {
           <div className="flex items-center gap-3">
             {signedIn ? (
               <>
+              {profile && (
+                <a
+                  href={profile.profileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden md:flex items-center gap-2 bg-[#161b22] border border-gray-800 rounded-lg px-3 py-2"
+                >
+                  <img
+                    src={profile.avatarUrl}
+                    alt={profile.login}
+                    className="w-6 h-6 rounded-full"
+                  />
+
+                  <span className="text-sm text-gray-300">
+                    {profile.name || profile.login}
+                  </span>
+                </a>
+              )}
                 <button
                   onClick={loadRepos}
                   className="px-4 py-2 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-gray-700 text-sm font-medium"
