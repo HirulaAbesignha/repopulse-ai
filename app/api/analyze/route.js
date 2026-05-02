@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { githubFetch, parseGitHubUrl } from "@/lib/github";
 import { scoreRepository } from "@/lib/scoreRepo";
 import { generateReadmeDraft } from "@/lib/readmeGenerator";
@@ -14,21 +15,31 @@ export async function POST(req) {
       );
     }
 
+    const cookieStore = await cookies();
+    const accessToken = cookieStore.get("github_access_token")?.value || null;
+
     const { owner, repo } = parseGitHubUrl(repoUrl);
 
-    const repoData = await githubFetch(`/repos/${owner}/${repo}`);
-    const languages = await githubFetch(`/repos/${owner}/${repo}/languages`);
-    const issues = await githubFetch(
-      `/repos/${owner}/${repo}/issues?state=open`
+    const repoData = await githubFetch(`/repos/${owner}/${repo}`, accessToken);
+    const languages = await githubFetch(
+      `/repos/${owner}/${repo}/languages`,
+      accessToken
     );
+
+    const issues = await githubFetch(
+      `/repos/${owner}/${repo}/issues?state=open`,
+      accessToken
+    );
+
     const pulls = await githubFetch(
-      `/repos/${owner}/${repo}/pulls?state=open`
+      `/repos/${owner}/${repo}/pulls?state=open`,
+      accessToken
     );
 
     let readme = null;
 
     try {
-      readme = await githubFetch(`/repos/${owner}/${repo}/readme`);
+      readme = await githubFetch(`/repos/${owner}/${repo}/readme`, accessToken);
     } catch {
       readme = null;
     }

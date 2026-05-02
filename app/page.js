@@ -1,17 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
   const [repoUrl, setRepoUrl] = useState("");
   const [report, setReport] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const [copied, setCopied] = useState(false);
+  const [repos, setRepos] = useState([]);
+  const [reposLoading, setReposLoading] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    loadReposQuietly();
+  }, []);
+
+  async function safeJsonResponse(res) {
+    const text = await res.text();
+
+    try {
+      return text ? JSON.parse(text) : {};
+    } catch {
+      throw new Error("API did not return valid JSON. Check your terminal.");
+    }
+  }
+
+  async function loadReposQuietly() {
+    try {
+      const res = await fetch("/api/user/repos");
+      const data = await safeJsonResponse(res);
+
+      if (res.ok) {
+        setSignedIn(true);
+        setRepos(data.repos || []);
+      }
+    } catch {
+      setSignedIn(false);
+    }
+  }
+
+  async function loadRepos() {
+    setReposLoading(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/user/repos");
+      const data = await safeJsonResponse(res);
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to load repositories");
+      }
+
+      setSignedIn(true);
+      setRepos(data.repos || []);
+    } catch (err) {
+      setSignedIn(false);
+      setError(err.message);
+    } finally {
+      setReposLoading(false);
+    }
+  }
 
   async function analyzeRepo(e) {
     e.preventDefault();
+    await analyzeRepoUrl(repoUrl);
+  }
 
+  async function analyzeRepoUrl(url) {
     setLoading(true);
     setError("");
     setReport(null);
@@ -23,16 +80,17 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ repoUrl }),
+        body: JSON.stringify({ repoUrl: url }),
       });
 
-      const data = await res.json();
+      const data = await safeJsonResponse(res);
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to analyze repository");
       }
 
       setReport(data);
+      setRepoUrl(url);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -72,19 +130,47 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-[#0d1117] text-white px-6 py-12">
-      <section className="max-w-5xl mx-auto">
-        <div className="mb-10">
-          <p className="text-sm text-gray-400 mb-3">
-            GitHub Repository Analyzer
-          </p>
+      <section className="max-w-6xl mx-auto">
+        <nav className="flex items-center justify-between mb-12">
+          <p className="text-sm text-gray-400">GitHub Repository Analyzer</p>
 
+          <div className="flex items-center gap-3">
+            {signedIn ? (
+              <>
+                <button
+                  onClick={loadRepos}
+                  className="px-4 py-2 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-gray-700 text-sm font-medium"
+                >
+                  {reposLoading ? "Loading..." : "Refresh Repos"}
+                </button>
+
+                <a
+                  href="/api/auth/logout"
+                  className="px-4 py-2 rounded-lg bg-red-950 hover:bg-red-900 border border-red-800 text-red-200 text-sm font-medium"
+                >
+                  Logout
+                </a>
+              </>
+            ) : (
+              <a
+                href="/api/auth/github/login"
+                className="px-4 py-2 rounded-lg bg-white text-black hover:bg-gray-200 text-sm font-semibold"
+              >
+                Sign in with GitHub
+              </a>
+            )}
+          </div>
+        </nav>
+
+        <div className="mb-10">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             RepoPulse AI
           </h1>
 
           <p className="text-gray-400 text-lg max-w-2xl">
             Analyze any GitHub repository and get a clean project health report
-            with README checks, activity insights, and improvement suggestions.
+            with README checks, activity insights, improvement suggestions, and
+            a professional README draft.
           </p>
         </div>
 
@@ -109,6 +195,85 @@ export default function Home() {
             {loading ? "Analyzing..." : "Analyze Repo"}
           </button>
         </form>
+
+        {signedIn && (
+          <div className="mb-8 bg-[#161b22] border border-gray-800 rounded-2xl p-6">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+              <div>
+                <h2 className="text-2xl font-bold">Your GitHub Repositories</h2>
+                <p className="text-gray-400">
+                  Select one of your repositories and analyze it instantly.
+                </p>
+              </div>
+
+              <p className="text-sm text-gray-400">
+                {repos.length} repositories loaded
+              </p>
+            </div>
+
+            {repos.length > 0 ? (
+              <div className="grid md:grid-cols-2 gap-4 max-h-[420px] overflow-y-auto pr-2">
+                {repos.map((repo) => (
+                  <div
+                    key={repo.id}
+                    className="bg-[#0d1117] border border-gray-800 rounded-xl p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div>
+                        <h3 className="font-bold">{repo.fullName}</h3>
+                        <p className="text-gray-400 text-sm mt-1">
+                          {repo.description || "No description available"}
+                        </p>
+                      </div>
+
+                      {repo.private && (
+                        <span className="text-xs bg-yellow-950 border border-yellow-800 text-yellow-300 px-2 py-1 rounded-full">
+                          Private
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-3 text-sm text-gray-400 mt-4 mb-4">
+                      <span>⭐ {repo.stars}</span>
+                      <span>⑂ {repo.forks}</span>
+                      <span>{repo.language || "N/A"}</span>
+                    </div>
+
+                    <button
+                      onClick={() => analyzeRepoUrl(repo.url)}
+                      disabled={loading}
+                      className="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+                    >
+                      Analyze this repo
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 text-gray-400">
+                No repositories loaded yet. Click Refresh Repos.
+              </div>
+            )}
+          </div>
+        )}
+
+        {!signedIn && (
+          <div className="mb-8 bg-[#161b22] border border-gray-800 rounded-2xl p-6">
+            <h2 className="text-2xl font-bold mb-2">Connect GitHub</h2>
+            <p className="text-gray-400 mb-4">
+              Sign in with GitHub to load your repositories directly inside
+              RepoPulse AI. You can still analyze public repositories manually
+              using the URL input above.
+            </p>
+
+            <a
+              href="/api/auth/github/login"
+              className="inline-block px-5 py-3 rounded-lg bg-white text-black hover:bg-gray-200 font-semibold"
+            >
+              Sign in with GitHub
+            </a>
+          </div>
+        )}
 
         {error && (
           <div className="bg-red-950 border border-red-800 text-red-300 p-4 rounded-lg mb-6">
@@ -177,7 +342,7 @@ export default function Home() {
 
             {report.readmeDraft && (
               <div className="mb-8">
-                <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
                   <h3 className="text-xl font-bold">
                     Generated README Draft
                   </h3>
@@ -197,7 +362,6 @@ export default function Home() {
                       Download README.md
                     </button>
                   </div>
-
                 </div>
 
                 <pre className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 text-gray-300 text-sm overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
