@@ -7,6 +7,7 @@ export default function Home() {
   const [report, setReport] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   async function analyzeRepo(e) {
     e.preventDefault();
@@ -14,6 +15,7 @@ export default function Home() {
     setLoading(true);
     setError("");
     setReport(null);
+    setCopied(false);
 
     try {
       const res = await fetch("/api/analyze", {
@@ -36,6 +38,17 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function copyReadme() {
+    if (!report?.readmeDraft) return;
+
+    await navigator.clipboard.writeText(report.readmeDraft);
+    setCopied(true);
+
+    setTimeout(() => {
+      setCopied(false);
+    }, 2000);
   }
 
   return (
@@ -110,15 +123,22 @@ export default function Home() {
                 value={report.repo.language || "N/A"}
               />
             </div>
+
             <div className="mb-8 bg-[#0d1117] border border-gray-800 rounded-xl p-5">
-              <h3 className="text-xl font-bold mb-3">Smart Project Summary</h3>
-              <p className="text-gray-300 leading-relaxed">{report.summary}</p>
+              <h3 className="text-xl font-bold mb-3">
+                Smart Project Summary
+              </h3>
+              <p className="text-gray-300 leading-relaxed">
+                {report.summary}
+              </p>
             </div>
 
             <div className="mb-8">
-              <h3 className="text-xl font-bold mb-4">Improvement Suggestions</h3>
+              <h3 className="text-xl font-bold mb-4">
+                Improvement Suggestions
+              </h3>
 
-              {report.suggestions.length > 0 ? (
+              {report.suggestions && report.suggestions.length > 0 ? (
                 <div className="space-y-3">
                   {report.suggestions.map((suggestion, index) => (
                     <div
@@ -135,6 +155,27 @@ export default function Home() {
                 </div>
               )}
             </div>
+
+            {report.readmeDraft && (
+              <div className="mb-8">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <h3 className="text-xl font-bold">
+                    Generated README Draft
+                  </h3>
+
+                  <button
+                    onClick={copyReadme}
+                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-medium"
+                  >
+                    {copied ? "Copied!" : "Copy README"}
+                  </button>
+                </div>
+
+                <pre className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 text-gray-300 text-sm overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
+                  {report.readmeDraft}
+                </pre>
+              </div>
+            )}
 
             <h3 className="text-xl font-bold mb-4">Health Checks</h3>
 
