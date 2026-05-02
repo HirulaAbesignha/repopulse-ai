@@ -17,8 +17,12 @@ export async function POST(req) {
 
     const repoData = await githubFetch(`/repos/${owner}/${repo}`);
     const languages = await githubFetch(`/repos/${owner}/${repo}/languages`);
-    const issues = await githubFetch(`/repos/${owner}/${repo}/issues?state=open`);
-    const pulls = await githubFetch(`/repos/${owner}/${repo}/pulls?state=open`);
+    const issues = await githubFetch(
+      `/repos/${owner}/${repo}/issues?state=open`
+    );
+    const pulls = await githubFetch(
+      `/repos/${owner}/${repo}/pulls?state=open`
+    );
 
     let readme = null;
 
@@ -47,10 +51,15 @@ export async function POST(req) {
         language: repoData.language,
         updatedAt: repoData.updated_at,
         url: repoData.html_url,
+        license: repoData.license?.name || null,
       },
       languages,
       score: result.score,
       checks: result.checks,
+      suggestions: result.suggestions,
+      summary: result.summary,
+      missingSections: result.missingSections,
+      readmeLength: result.readmeLength,
     });
   } catch (error) {
     return Response.json(
