@@ -110,6 +110,31 @@ export default function Home() {
                 value={report.repo.language || "N/A"}
               />
             </div>
+            <div className="mb-8 bg-[#0d1117] border border-gray-800 rounded-xl p-5">
+              <h3 className="text-xl font-bold mb-3">Smart Project Summary</h3>
+              <p className="text-gray-300 leading-relaxed">{report.summary}</p>
+            </div>
+
+            <div className="mb-8">
+              <h3 className="text-xl font-bold mb-4">Improvement Suggestions</h3>
+
+              {report.suggestions.length > 0 ? (
+                <div className="space-y-3">
+                  {report.suggestions.map((suggestion, index) => (
+                    <div
+                      key={index}
+                      className="bg-[#0d1117] border border-gray-800 rounded-lg p-4 text-gray-300"
+                    >
+                      💡 {suggestion}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-green-950 border border-green-800 text-green-300 rounded-lg p-4">
+                  Great job. No major suggestions found.
+                </div>
+              )}
+            </div>
 
             <h3 className="text-xl font-bold mb-4">Health Checks</h3>
 
