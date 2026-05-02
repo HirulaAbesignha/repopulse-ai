@@ -40,6 +40,13 @@ export async function POST(req) {
       issues,
       pulls,
     });
+    
+    const readmeDraft = generateReadmeDraft({
+      repo: repoData,
+      languages,
+      score: result.score,
+      suggestions: result.suggestions,
+    });
 
     return Response.json({
       repo: {
