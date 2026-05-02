@@ -40,7 +40,7 @@ export async function POST(req) {
       issues,
       pulls,
     });
-    
+
     const readmeDraft = generateReadmeDraft({
       repo: repoData,
       languages,
@@ -68,6 +68,7 @@ export async function POST(req) {
       summary: result.summary,
       missingSections: result.missingSections,
       readmeLength: result.readmeLength,
+      readmeDraft,
     });
   } catch (error) {
     return Response.json(
