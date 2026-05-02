@@ -51,6 +51,25 @@ export default function Home() {
     }, 2000);
   }
 
+  function downloadReadme() {
+    if (!report?.readmeDraft) return;
+
+    const blob = new Blob([report.readmeDraft], {
+      type: "text/markdown",
+    });
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "README.md";
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <main className="min-h-screen bg-[#0d1117] text-white px-6 py-12">
       <section className="max-w-5xl mx-auto">
@@ -163,12 +182,22 @@ export default function Home() {
                     Generated README Draft
                   </h3>
 
-                  <button
-                    onClick={copyReadme}
-                    className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-medium"
-                  >
-                    {copied ? "Copied!" : "Copy README"}
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={copyReadme}
+                      className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-sm font-medium"
+                    >
+                      {copied ? "Copied!" : "Copy README"}
+                    </button>
+
+                    <button
+                      onClick={downloadReadme}
+                      className="px-4 py-2 rounded-lg bg-[#21262d] hover:bg-[#30363d] border border-gray-700 text-sm font-medium"
+                    >
+                      Download README.md
+                    </button>
+                  </div>
+
                 </div>
 
                 <pre className="bg-[#0d1117] border border-gray-800 rounded-xl p-5 text-gray-300 text-sm overflow-x-auto whitespace-pre-wrap leading-relaxed max-h-[500px] overflow-y-auto">
