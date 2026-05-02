@@ -1,3 +1,4 @@
+import { generateReadmeDraft } from "@/lib/readmeGenerator";
 import { githubFetch, parseGitHubUrl } from "@/lib/github";
 import { scoreRepository } from "@/lib/scoreRepo";
 
